@@ -7,6 +7,15 @@ public class DraggableObject : MonoBehaviour
     private float zCoordinate;
     private Vector3 originalPosition;
     private float returnSpeed = 10f;
+    private BoxCollider2D collider;
+    public LayerMask collisionLayer;
+
+    public GameObject CurrentParent = null;
+
+    public void Start()
+    {
+        collider=GetComponent<BoxCollider2D>();
+    }
     void OnMouseDown()
     {
         // Store the z-coordinate of the object
@@ -32,7 +41,26 @@ public class DraggableObject : MonoBehaviour
     {
         // Stop dragging
         isDragging = false;
-        StartCoroutine(SmoothReturn());
+
+        Collider2D hitCollider = Physics2D.OverlapBox(transform.position, collider.size, 0f, collisionLayer);
+        if (hitCollider !=null)
+        {
+            Debug.Log("Colliding with a slot");
+            Slot slot= hitCollider.GetComponent<Slot>();
+            if(slot.CheckAvailability())
+            {
+                Debug.Log("There is a place");
+                slot.DropItem(this);
+                originalPosition = this.transform.position;
+            }
+
+        }
+
+        else
+        {
+            Debug.Log("Getting it back to its original place");
+            StartCoroutine(SmoothReturn());
+        }
     }
 
     private Vector3 GetMouseWorldPos()
