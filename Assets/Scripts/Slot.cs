@@ -4,6 +4,8 @@ using UnityEngine;
 
 
 public enum Spots { unAssigned,left, middle,right}
+public enum SpecialEffect {normal,locked}
+
 public class Slot : MonoBehaviour
 {
     private const int capacity = 3;
