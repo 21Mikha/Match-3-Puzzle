@@ -3,17 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public enum Spot {empty,occupied}
+public enum Spots { unAssigned,left, middle,right}
 public class Slot : MonoBehaviour
 {
     private const int capacity = 3;
     private int availableSpots = 3;
 
+
+
+
+    //Anchor points -Used to find a suitable place for items to be placed in
     public Transform leftPoint;
     public Transform middlePoint;
     public Transform rightPoint;
 
-    private Spot[] spots=new Spot[3];
+    //Stacks to store items -First In Last Out
+    private Stack<DraggableObject> leftStack=new Stack<DraggableObject>();
+    private Stack<DraggableObject> middleStack = new Stack<DraggableObject>();
+    private Stack<DraggableObject> rightStack = new Stack<DraggableObject>();
+
     void Start()
     {
         leftPoint = transform.GetChild(0).gameObject.transform;
@@ -21,11 +29,6 @@ public class Slot : MonoBehaviour
         rightPoint = transform.GetChild(2).gameObject.transform;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
     public bool CheckAvailability()
     {
         if (availableSpots > 0)
@@ -34,35 +37,108 @@ public class Slot : MonoBehaviour
         }
         else { return false; }
     }
-    public void DropItem(DraggableObject item)
+    public void AddItem(DraggableObject item)
     {
-       item.transform.position = GetAvailableSpot().position;
-    }
+        Spots availableSpot = GetAvailableSpot();
 
-    public Transform GetAvailableSpot()
-    {
-        if (spots[0]==Spot.empty)
+        if(availableSpot== Spots.left)
         {
-            spots[0] = Spot.occupied;
-            availableSpots--;
-            return leftPoint;
+            item.position = Position.left;
+            item.transform.position = leftPoint.position;
+            leftStack.Push(item);
         }
-        else if (spots[1] == Spot.empty)
+        else if(availableSpot== Spots.middle)
         {
-            spots[1] = Spot.occupied;
-            availableSpots--;
-            return middlePoint;
+            item.position = Position.middle;
+            item.transform.position = middlePoint.position;
+            middleStack.Push(item);
+        }
+        else if (availableSpot == Spots.right)
+        {
+            item.position = Position.right;
+            item.transform.position = rightPoint.position;
+            rightStack.Push(item);
         }
         else
         {
-            spots[2] = Spot.occupied;
-            availableSpots--;
-            return rightPoint;
+            Debug.LogError("Error Adding an item, Unhadled situation");
         }
     }
-    public void FreeSpot()
+    public void RemoveItem(DraggableObject item,Position pos)
     {
-        availableSpots++;
+        if(pos==Position.left)
+        {
+            availableSpots++;
+            if (leftStack.Count > 0)
+                leftStack.Pop();
+        }
+        else if (pos==Position.middle)
+        {
+            availableSpots++;
+            if (middleStack.Count > 0)
+            middleStack.Pop();
+        }
+        else if(pos == Position.right)
+        {
+            availableSpots++;
+            if (rightStack.Count > 0)
+            rightStack.Pop();
+        }
+        else
+        {
+            Debug.LogError("Error removing an item, Unhadled situation");
+        }
     }
+    public Spots GetAvailableSpot()
+    {
+        //Check left stack first
+        if (leftStack.Count > 0)
+        {
+            if (leftStack.Peek().status == Status.shadowed)
+            {
+                availableSpots--;
+                return Spots.left;
+            }
+        }
+        else
+        {
+            availableSpots--;
+            return Spots.left;
+        }
+
+        //Check middle stack
+        if (middleStack.Count > 0)
+        {
+            if (middleStack.Peek().status == Status.shadowed)
+            {
+                availableSpots--;
+                return Spots.middle;
+            }
+        }
+        else
+        {
+            availableSpots--;
+            return Spots.middle;
+        }
+
+        //Check right stack
+        if (rightStack.Count > 0)
+        {
+            if (rightStack.Peek().status == Status.shadowed)
+            {
+                availableSpots--;
+                return Spots.right;
+            }
+        }
+        else
+        {
+            availableSpots--;
+            return Spots.right;
+        }
+
+        Debug.LogError("Error finding available spot");
+        return Spots.unAssigned;
+    }
+
 
 }

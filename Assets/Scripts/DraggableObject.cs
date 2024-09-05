@@ -1,5 +1,7 @@
 using UnityEngine;
 
+public enum Status { unAssigned,visible, shadowed,invisible,gotMatched}
+public enum Position { unAssigned, left, middle, right }
 public class DraggableObject : MonoBehaviour
 {
     private bool isDragging = false;
@@ -7,14 +9,17 @@ public class DraggableObject : MonoBehaviour
     private float zCoordinate;
     private Vector3 originalPosition;
     private float returnSpeed = 10f;
-    private BoxCollider2D collider;
+    private BoxCollider2D _collider;
     public LayerMask collisionLayer;
 
-    public GameObject CurrentParent = null;
+    public Slot CurrentSlotParent = null;
+
+    public Status status = Status.unAssigned;
+    public Position position=Position.unAssigned;
 
     public void Start()
     {
-        collider=GetComponent<BoxCollider2D>();
+        _collider=GetComponent<BoxCollider2D>();
     }
     void OnMouseDown()
     {
@@ -42,7 +47,7 @@ public class DraggableObject : MonoBehaviour
         // Stop dragging
         isDragging = false;
 
-        Collider2D hitCollider = Physics2D.OverlapBox(transform.position, collider.size, 0f, collisionLayer);
+        Collider2D hitCollider = Physics2D.OverlapBox(transform.position, _collider.size, 0f, collisionLayer);
         if (hitCollider !=null)
         {
             Debug.Log("Colliding with a slot");
@@ -50,7 +55,9 @@ public class DraggableObject : MonoBehaviour
             if(slot.CheckAvailability())
             {
                 Debug.Log("There is a place");
-                slot.DropItem(this);
+                CurrentSlotParent.RemoveItem(this, position);
+                slot.AddItem(this);
+                CurrentSlotParent = slot;
                 originalPosition = this.transform.position;
             }
 

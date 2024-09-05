@@ -318,6 +318,9 @@ MonoBehaviour:
   collisionLayer:
     serializedVersion: 2
     m_Bits: 128
+  CurrentSlotParent: {fileID: 866361377}
+  status: 1
+  position: 2
 --- !u!4 &306570325
 Transform:
   m_ObjectHideFlags: 0
@@ -1022,6 +1025,9 @@ MonoBehaviour:
   collisionLayer:
     serializedVersion: 2
     m_Bits: 128
+  CurrentSlotParent: {fileID: 866361377}
+  status: 1
+  position: 2
 --- !u!61 &1833403990
 BoxCollider2D:
   m_ObjectHideFlags: 0
