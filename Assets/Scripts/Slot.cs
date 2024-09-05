@@ -29,6 +29,50 @@ public class Slot : MonoBehaviour
         rightPoint = transform.GetChild(2).gameObject.transform;
     }
 
+
+
+    public void PopulateSlot(DraggableObject item, Spots spot)
+    {
+
+        if (spot == Spots.left)
+        {
+            item.position = Position.left;
+            item.transform.position = leftPoint.position;
+            leftStack.Push(item);
+
+            if (leftStack.Count > 0)
+            {
+                item.status = Status.shadowed;
+            }
+        }
+        else if (spot == Spots.middle)
+        {
+            item.position = Position.middle;
+            item.transform.position = middlePoint.position;
+            middleStack.Push(item);
+
+            if (middleStack.Count > 0)
+            {
+                item.status = Status.shadowed;
+            }
+        }
+        else if (spot == Spots.right)
+        {
+            item.position = Position.right;
+            item.transform.position = rightPoint.position;
+            rightStack.Push(item);
+
+            if(rightStack.Count > 0)
+            {
+                item.status = Status.shadowed;
+            }
+        }
+    }
+
+
+
+
+
     public bool CheckAvailability()
     {
         if (availableSpots > 0)
@@ -37,6 +81,9 @@ public class Slot : MonoBehaviour
         }
         else { return false; }
     }
+
+
+    //AddItem is called by the draggable object when collision happens with the slot to check if adding is possible and add it
     public void AddItem(DraggableObject item)
     {
         Spots availableSpot = GetAvailableSpot();
@@ -64,6 +111,9 @@ public class Slot : MonoBehaviour
             Debug.LogError("Error Adding an item, Unhadled situation");
         }
     }
+
+
+    //RemoveItem is called by the draggable object when it gets added to a new slot to notify previous slot to delete it
     public void RemoveItem(DraggableObject item,Position pos)
     {
         if(pos==Position.left)
