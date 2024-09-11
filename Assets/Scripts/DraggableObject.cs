@@ -17,9 +17,13 @@ public class DraggableObject : MonoBehaviour
     public Status status = Status.unAssigned;
     public Position position=Position.unAssigned;
 
-    public void Start()
+
+
+    private ItemView itemView;
+    public void Awake()
     {
         _collider=GetComponent<BoxCollider2D>();
+        itemView= transform.GetChild(0).GetComponent<ItemView>();
     }
     void OnMouseDown()
     {
@@ -59,6 +63,8 @@ public class DraggableObject : MonoBehaviour
                 slot.AddItem(this);
                 CurrentSlotParent = slot;
                 originalPosition = this.transform.position;
+
+                itemView.PlayDropAnimation();
             }
 
         }
