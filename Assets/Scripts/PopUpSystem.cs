@@ -39,7 +39,7 @@ public class PopUpSystem : MonoBehaviour
     // Winning Flow
     public void ShowWinningPopUp()
     {
-        winText.text = "Congratulations!";
+        winText.text = "Yoohooo!";
         loadingText.text = "Loading next level...";
         ResetAlpha(ref winText);
         ResetAlpha(ref loadingText);

@@ -3,32 +3,51 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using TMPro;
+using Zenject;
 
 public class LevelManager : MonoBehaviour
 {
-    public GameObject SlotPrefab;
-    public GameObject ItemPrefab;
-
-    private GameObject currentLevel;
-
     public string levelsDirectory = "Levels"; // Directory inside Resources folder
     public TextMeshProUGUI levelNumberLabel;
-    public LevelTimer levelTimer;
-
-    public PopUpSystem popUpSystem;
-
-    private LevelGenerator levelGenerator;
-    public MatchFeedback matchFeedback;
     Level _levelData;
 
     public const int levelsNumber = 5;
     public int levelIndex = 1;
     public int currentLevelIndex;
+
     public int NumberOfMatchs = 0;
 
     //Pause/Resume
     public GameObject pausePanel;
     private bool isPaused = false;
+
+    private GameObject slotPrefab;
+    private GameObject itemPrefab;
+    private GameObject currentLevel;
+    private LevelGenerator levelGenerator;
+    private LevelDataLoader levelDataLoader;
+    private PopUpSystem popUpSystem;
+    private MatchFeedback matchFeedback;
+    public LevelTimer levelTimer;
+
+    [Inject]
+    public void Construct(
+        [Inject(Id = "SlotPrefab")] GameObject slotPrefab,
+        [Inject(Id = "ItemPrefab")] GameObject itemPrefab,
+        PopUpSystem popUpSystem,
+        MatchFeedback matchFeedback,
+        LevelTimer levelTimer,
+        LevelDataLoader levelDataLoader)
+    {
+        this.slotPrefab = slotPrefab;
+        this.itemPrefab = itemPrefab;
+        this.popUpSystem = popUpSystem;
+        this.matchFeedback = matchFeedback;
+        this.levelTimer = levelTimer;
+        this.levelDataLoader = levelDataLoader;
+    }
+
+
 
 
     void Start()
@@ -91,8 +110,8 @@ public class LevelManager : MonoBehaviour
         popUpSystem.ShowLosingPopUp();
     }
 
-    
-    //Main method to load level and store its data in GameObject (currentLevel)
+
+    // Method to load level data and generate the level
     public void LoadLevelByIndex(int _levelIndex)
     {
         levelIndex = _levelIndex;
@@ -107,16 +126,16 @@ public class LevelManager : MonoBehaviour
         // Update the level label
         levelNumberLabel.text = "Level " + _levelIndex;
 
-        // Load the new level based on the index
+        // Load the new level using LevelDataLoader
         string jsonFileName = "Level_" + _levelIndex;
         string fullPath = Path.Combine(levelsDirectory, jsonFileName);
         LoadLevel(fullPath);
 
         // Generate and store the new level
-        currentLevel = levelGenerator.GenerateLevel(SlotPrefab, ItemPrefab);
+        currentLevel = levelGenerator.GenerateLevel(slotPrefab, itemPrefab);
         _levelData = levelGenerator.levelData;
 
-        //Set timer based on the level data
+        // Set timer based on the level data
         levelTimer.SetLevelTime(_levelData.time);
 
         foreach (Transform child in currentLevel.transform)
@@ -131,20 +150,21 @@ public class LevelManager : MonoBehaviour
         currentLevel.SetActive(false);  // Initially set inactive until after transition
     }
 
-    //Method to pass json file -> LevelGenerator
+    // Method to load level data through LevelDataLoader
     void LoadLevel(string jsonPath)
     {
-        TextAsset jsonTextFile = Resources.Load<TextAsset>(jsonPath);
+        Level loadedLevel = levelDataLoader.LoadLevelData(jsonPath);
 
-        if (jsonTextFile != null)
+        if (loadedLevel != null)
         {
-            levelGenerator.SetLevelData(jsonTextFile.text, SlotPrefab, ItemPrefab);
+            levelGenerator.SetLevelData(JsonUtility.ToJson(loadedLevel), slotPrefab, itemPrefab);
         }
         else
         {
-            Debug.LogError("JSON file not found at: " + jsonPath);
+            Debug.LogError("Failed to load level data from: " + jsonPath);
         }
     }
+
 
     public void RetryLevel()
     {
