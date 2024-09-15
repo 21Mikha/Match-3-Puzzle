@@ -1,100 +1,99 @@
+using System;
 using UnityEngine;
 
-public enum Status { unAssigned,visible, shadowed,invisible,gotMatched}
-public enum Position { unAssigned, left, middle, right }
 public class DraggableObject : MonoBehaviour
 {
+    public event Action<Slot> OnSlotEnter;  // Event for entering a slot
+    public event Action OnDragStart; // Event for starting drag
+    public event Action OnDragEnd;  // Event for ending drag
+
     private bool isDragging = false;
     private Vector3 offset;
     private float zCoordinate;
-    private Vector3 originalPosition;
+
     private float returnSpeed = 10f;
-    private BoxCollider2D _collider;
+    public BoxCollider2D _collider;
+    public Vector3 boxColliderOffset = new Vector3(0, 0.5f, 0);
     public LayerMask collisionLayer;
 
-    public Slot CurrentSlotParent = null;
-
-    public Status status = Status.unAssigned;
-    public Position position=Position.unAssigned;
-
-
-
-    private ItemView itemView;
-    public void Awake()
+    private ItemController itemController;
+    private void Awake()
     {
-        _collider=GetComponent<BoxCollider2D>();
-        itemView= transform.GetChild(0).GetComponent<ItemView>();
+        _collider = GetComponent<BoxCollider2D>();
+        itemController = GetComponent<ItemController>();
     }
+
     void OnMouseDown()
     {
-        // Store the z-coordinate of the object
-        zCoordinate = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+        if(itemController.isClickable)
+        {
+            zCoordinate = Camera.main.WorldToScreenPoint(gameObject.transform.position).z;
+            offset = gameObject.transform.position - GetMouseWorldPos();
+            isDragging = true;
+        }
 
-        // Calculate the offset between the mouse position and the object position
-        offset = gameObject.transform.position - GetMouseWorldPos();
-        originalPosition=this.transform.position;
-        // Set dragging to true
-        isDragging = true;
     }
 
     void OnMouseDrag()
     {
-        if (isDragging)
+        if (itemController.isClickable)
         {
-            // Update the object's position to follow the mouse, accounting for the offset
-            transform.position = GetMouseWorldPos() + offset;
+            if (isDragging)
+            {
+                transform.position = GetMouseWorldPos() + offset;
+                OnDragStart?.Invoke();
+            }
         }
     }
 
     void OnMouseUp()
     {
-        // Stop dragging
-        isDragging = false;
-
-        Collider2D hitCollider = Physics2D.OverlapBox(transform.position, _collider.size, 0f, collisionLayer);
-        if (hitCollider !=null)
+        if (itemController.isClickable)
         {
-            Debug.Log("Colliding with a slot");
-            Slot slot= hitCollider.GetComponent<Slot>();
-            if(slot.CheckAvailability())
+            isDragging = false;
+
+            Collider2D hitCollider = Physics2D.OverlapBox(transform.position + boxColliderOffset, _collider.size, 0f, collisionLayer);
+
+            if (hitCollider != null)
             {
-                Debug.Log("There is a place");
-                CurrentSlotParent.RemoveItem(this, position);
-                slot.AddItem(this);
-                CurrentSlotParent = slot;
-                originalPosition = this.transform.position;
-
-                itemView.PlayDropAnimation();
+                Slot slot = hitCollider.GetComponent<Slot>();
+                OnSlotEnter?.Invoke(slot);  // Raise the slot enter event
             }
-
-        }
-
-        else
-        {
-            Debug.Log("Getting it back to its original place");
-            StartCoroutine(SmoothReturn());
+            else
+            {
+                OnDragEnd?.Invoke();
+            }
         }
     }
 
-    private Vector3 GetMouseWorldPos()
+    public void ReturnToOriginalPosition(Vector3 originalPosition)
     {
-        // Get the current mouse position in screen space
-        Vector3 mousePoint = Input.mousePosition;
-
-        // Add the z-coordinate to the mouse point to convert to world space
-        mousePoint.z = zCoordinate;
-
-        // Convert the mouse position to world coordinates
-        return Camera.main.ScreenToWorldPoint(mousePoint);
+        StartCoroutine(SmoothReturn(originalPosition));
     }
 
-    private System.Collections.IEnumerator SmoothReturn()
+    private System.Collections.IEnumerator SmoothReturn(Vector3 originalPosition)
     {
         while (Vector3.Distance(transform.position, originalPosition) > 0.01f)
         {
             transform.position = Vector3.Lerp(transform.position, originalPosition, returnSpeed * Time.deltaTime);
             yield return null;
         }
-        transform.position = originalPosition;  // Snap to the original position to avoid slight inaccuracies
+        transform.position = originalPosition;
+    }
+
+    private Vector3 GetMouseWorldPos()
+    {
+        Vector3 mousePoint = Input.mousePosition;
+        mousePoint.z = zCoordinate;
+        return Camera.main.ScreenToWorldPoint(mousePoint);
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (_collider != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(transform.position + boxColliderOffset, _collider.size);
+        }
     }
 }

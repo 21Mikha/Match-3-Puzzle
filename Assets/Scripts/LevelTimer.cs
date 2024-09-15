@@ -2,89 +2,45 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using TMPro;
+using System;
 
 public class LevelTimer : MonoBehaviour
 {
-    public float levelTime = 120f; // Total time in seconds
-    public TextMeshProUGUI timerText;         // Reference to the UI Text component
-    public Color lowTimeColor = Color.red; // Color for when time is low
-    public float lowTimeThreshold = 30f;   // Threshold for "low time" effects
-    public float pulseSpeed = 1f;  // Speed of pulsing when time is low
-    public bool isPaused = false;  // Timer pause state
+    public float levelTime; // Total time in (seconds)
+    public TextMeshProUGUI timerText;
+    public Color lowTimeColor = Color.red;
+    public float lowTimeThreshold = 30f;
+    public float sizePulseSpeed = 0.35f;
+    public float sizePulseAmount = 0.15f;
+    public bool isPaused = false;
 
     private float timeRemaining;
-    private bool isTimeLow = false;  // Track if time is considered "low"
-    private Color originalTextColor; // Store original color of the text
+    private bool isTimeLow = false;
+    private Vector3 originalTextScale;
+    private Coroutine timerCoroutine;  
+    private Coroutine pulseCoroutine;  
 
-    void Start()
+    public event Action OnTimesUp;
+
+    public void SetLevelTime(float _levelTime)
     {
-        // Initialize the timer with the total time and the original text color
+        levelTime = _levelTime;
+    }
+
+    public void StartTimer()
+    {
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine); // Stop any previous coroutine
+        }
+
         timeRemaining = levelTime;
-        originalTextColor = timerText.color;
-        UpdateTimerDisplay();
-        StartCoroutine(TimerRoutine());
-    }
+        originalTextScale = timerText.transform.localScale;
+        UpdateTimerDisplay(); 
+        isPaused = false;
 
-    IEnumerator TimerRoutine()
-    {
-        while (timeRemaining > 0)
-        {
-            if (!isPaused)
-            {
-                timeRemaining -= Time.deltaTime;
-                UpdateTimerDisplay();
-
-                if (timeRemaining <= lowTimeThreshold && !isTimeLow)
-                {
-                    StartLowTimeEffects();
-                }
-
-                // Check if time has run out
-                if (timeRemaining <= 0)
-                {
-                    timeRemaining = 0;
-                    HandleLevelLost();
-                }
-            }
-            yield return null;
-        }
-    }
-
-    void UpdateTimerDisplay()
-    {
-        // Convert remaining time to minutes and seconds
-        int minutes = Mathf.FloorToInt(timeRemaining / 60f);
-        int seconds = Mathf.FloorToInt(timeRemaining % 60f);
-
-        // Update the UI text with the formatted time
-        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
-    }
-
-    void StartLowTimeEffects()
-    {
-        isTimeLow = true;
-        StartCoroutine(LowTimePulse());
-    }
-
-    IEnumerator LowTimePulse()
-    {
-        while (timeRemaining > 0 && isTimeLow)
-        {
-            // Pulse the text color between normal and low time color
-            float t = Mathf.PingPong(Time.time * pulseSpeed, 1f);
-            timerText.color = Color.Lerp(originalTextColor, lowTimeColor, t);
-
-            yield return null;
-        }
-    }
-
-    void HandleLevelLost()
-    {
-        // Stop the timer and trigger the lost level condition
-        Debug.Log("Level Lost! Time's up.");
-        StopCoroutine(TimerRoutine());
-        // Trigger game over logic or UI
-        // Example: GameManager.Instance.OnLevelLost();
+        // Start the new timer coroutine
+        timerCoroutine = StartCoroutine(TimerRoutine());
     }
 
     public void PauseTimer()
@@ -106,10 +62,85 @@ public class LevelTimer : MonoBehaviour
         }
     }
 
-    void StopLowTimeEffects()
+    private IEnumerator TimerRoutine()
+    {
+        while (timeRemaining > 0)
+        {
+            if (!isPaused)
+            {
+                timeRemaining -= Time.deltaTime;
+                // Start low-time effects (if) below threshold
+                if (timeRemaining <= lowTimeThreshold && !isTimeLow)
+                {
+                    StartLowTimeEffects();
+                }
+
+                // If time runs out
+                if (timeRemaining <= 0)
+                {
+                    timeRemaining = 0;
+                    HandleLevelLost();
+                }
+                UpdateTimerDisplay();
+            }
+            yield return null; 
+        }
+    }
+
+    private void UpdateTimerDisplay()
+    {
+        int minutes = Mathf.FloorToInt(timeRemaining / 60f);
+        int seconds = Mathf.FloorToInt(timeRemaining % 60f);
+        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+    }
+
+    private void StartLowTimeEffects()
+    {
+        isTimeLow = true;
+        timerText.color = lowTimeColor;
+
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);  // Stop any existing pulse effect
+        }
+        pulseCoroutine = StartCoroutine(LowTimePulse());
+    }
+
+    private IEnumerator LowTimePulse()
+    {
+        while (timeRemaining > 0 && isTimeLow)
+        {
+            float scaleAmount = 1f + Mathf.PingPong(Time.time * sizePulseSpeed, sizePulseAmount);
+            timerText.transform.localScale = originalTextScale * scaleAmount;
+            yield return null;
+        }
+    }
+
+    private void HandleLevelLost()
+    {
+        Debug.Log("Level Lost! Time's up.");
+        OnTimesUp?.Invoke();
+
+        // Stop the timer coroutine
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine);
+            timerCoroutine = null;
+        }
+    }
+
+    private void StopLowTimeEffects()
     {
         isTimeLow = false;
-        StopCoroutine(LowTimePulse());
-        timerText.color = originalTextColor;
+
+        // Stop the pulsing effect if running
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+
+        timerText.color = Color.white;  // Reset text color
+        timerText.transform.localScale = originalTextScale;  // Reset text scale
     }
 }

@@ -1,0 +1,203 @@
+{
+  "level": 5,
+  "levelType": "Hard",
+  "time": 360,
+  "itemsNumber": 20,
+  "slots": [
+    {
+      "position": {
+        "x": -3.1,
+        "y": 3.6,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 19 ],
+        "middle": [ 19 ],
+        "right": [ 11 ]
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 2.6,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [ 11 ],
+        "right": [ 12 ]
+      }
+    },
+    {
+      "position": {
+        "x": 3.1,
+        "y": 3.6,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 12 ],
+        "middle": [ 12, 11, 0 ],
+        "right": [ 13 ]
+      }
+    },
+    {
+      "position": {
+        "x": -3.1,
+        "y": 2.05,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 13 ],
+        "middle": [ 13 ],
+        "right": [ 14, 10, 0 ]
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 1.05,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [ 19, 10 ],
+        "right": [ 14, 10 ]
+      }
+    },
+    {
+      "position": {
+        "x": 3.1,
+        "y": 2.05,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [],
+        "right": [ 14, 9 ]
+      }
+    },
+    {
+      "position": {
+        "x": -3.1,
+        "y": 0.5,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [ 18, 9 ],
+        "right": [ 18, 9 ]
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": -0.5,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 8 ],
+        "middle": [ 8, 1 ],
+        "right": []
+      }
+    },
+    {
+      "position": {
+        "x": 3.1,
+        "y": 0.5,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [ 8, 7, 1 ],
+        "right": [ 15, 7 ]
+      }
+    },
+    {
+      "position": {
+        "x": -3.1,
+        "y": -1.05,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 6 ],
+        "middle": [ 18, 7, 0 ],
+        "right": [ 6, 5 ]
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": -2.05,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 6 ],
+        "middle": [ 5, 4 ],
+        "right": [ 16, 5, 4 ]
+      }
+    },
+    {
+      "position": {
+        "x": 3.1,
+        "y": -1.05,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 4, 3 ],
+        "middle": [ 3 ],
+        "right": [ 2 ]
+      }
+    },
+    {
+      "position": {
+        "x": -3.1,
+        "y": -2.6,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [ 17, 3 ],
+        "right": [ 17 ]
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": -3.6,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [],
+        "middle": [ 15 ],
+        "right": [ 15 ]
+      }
+    },
+    {
+      "position": {
+        "x": 3.1,
+        "y": -2.6,
+        "z": 0.01
+      },
+      "specialEffect": null,
+      "places": {
+        "left": [ 16, 1 ],
+        "middle": [ 17, 2 ],
+        "right": [ 16, 2 ]
+      }
+    }
+  ]
+}

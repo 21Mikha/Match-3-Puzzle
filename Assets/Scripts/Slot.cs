@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,8 +10,8 @@ public enum SpecialEffect {normal,locked}
 public class Slot : MonoBehaviour
 {
     private const int capacity = 3;
-    private int availableSpots = 3;
-
+    public int availableSpots;
+    public event Action<Slot> OnMatch;
 
 
 
@@ -20,11 +21,12 @@ public class Slot : MonoBehaviour
     public Transform rightPoint;
 
     //Stacks to store items -First In Last Out
-    private Stack<DraggableObject> leftStack=new Stack<DraggableObject>();
-    private Stack<DraggableObject> middleStack = new Stack<DraggableObject>();
-    private Stack<DraggableObject> rightStack = new Stack<DraggableObject>();
+    private Stack<ItemController> leftStack=new Stack<ItemController>();
+    private Stack<ItemController> middleStack = new Stack<ItemController>();
+    private Stack<ItemController> rightStack = new Stack<ItemController>();
 
-    void Start()
+
+    void Awake()
     {
         leftPoint = transform.GetChild(0).gameObject.transform;
         middlePoint = transform.GetChild(1).gameObject.transform;
@@ -33,7 +35,7 @@ public class Slot : MonoBehaviour
 
 
 
-    public void PopulateSlot(DraggableObject item, Spots spot)
+    public void PopulateSlot(ItemController item, Spots spot)
     {
 
         if (spot == Spots.left)
@@ -41,41 +43,54 @@ public class Slot : MonoBehaviour
             item.position = Position.left;
             item.transform.position = leftPoint.position;
             leftStack.Push(item);
-
-            if (leftStack.Count > 0)
-            {
-                item.status = Status.shadowed;
-            }
         }
         else if (spot == Spots.middle)
         {
             item.position = Position.middle;
             item.transform.position = middlePoint.position;
             middleStack.Push(item);
-
-            if (middleStack.Count > 0)
-            {
-                item.status = Status.shadowed;
-            }
         }
         else if (spot == Spots.right)
         {
             item.position = Position.right;
             item.transform.position = rightPoint.position;
             rightStack.Push(item);
+        }
+        ReArrangeStack(leftStack);
+        ReArrangeStack(middleStack);
+        ReArrangeStack(rightStack);
+        UpdateAvailability();
+    }
 
-            if(rightStack.Count > 0)
+    public void ReArrangeStack(Stack<ItemController> stack)
+    {
+        if (stack != null || stack.Count > 0)
+        {
+            //Convert stack to array to get access from top to bottom
+            ItemController[] stackArray = stack.ToArray();
+
+            for (int i = 0; i < stackArray.Length; i++)
             {
-                item.status = Status.shadowed;
+                if (i == 0)
+                {
+                    stackArray[i].UpdateStatus(Status.visible);
+                }
+                else if (i == 1)
+                {
+                    stackArray[i].UpdateStatus(Status.shadowed);
+                }
+                else
+                {
+                    stackArray[i].UpdateStatus(Status.invisible);
+                }
             }
         }
     }
 
 
 
-
-
     public bool CheckAvailability()
+
     {
         if (availableSpots > 0)
         {
@@ -84,9 +99,33 @@ public class Slot : MonoBehaviour
         else { return false; }
     }
 
+    private void UpdateAvailability()
+    {
+        // Reset availableSpots to the maximum capacity (3)
+        availableSpots = capacity;
 
-    //AddItem is called by the draggable object when collision happens with the slot to check if adding is possible and add it
-    public void AddItem(DraggableObject item)
+        //Check each stack and reduce availableSpots accordingly
+        if (leftStack.Count > 0 && leftStack.Peek().status == Status.visible)
+        {
+            availableSpots--;
+        }
+
+        if (middleStack.Count > 0 && middleStack.Peek().status == Status.visible)
+        {
+            availableSpots--;
+        }
+
+        if (rightStack.Count > 0 && rightStack.Peek().status == Status.visible)
+        {
+            availableSpots--;
+        }
+
+        //Ensure that availableSpots does not go below 0
+        availableSpots = Mathf.Max(availableSpots, 0);
+    }
+
+    //AddItem is called by the draggable object when collision happens with the slot to check if adding is possible (if so) add it
+    public void AddItem(ItemController item)
     {
         Spots availableSpot = GetAvailableSpot();
 
@@ -95,18 +134,24 @@ public class Slot : MonoBehaviour
             item.position = Position.left;
             item.transform.position = leftPoint.position;
             leftStack.Push(item);
+            CheckForMatch();
+            UpdateAvailability();
         }
         else if(availableSpot== Spots.middle)
         {
             item.position = Position.middle;
             item.transform.position = middlePoint.position;
             middleStack.Push(item);
+            CheckForMatch();
+            UpdateAvailability();
         }
         else if (availableSpot == Spots.right)
         {
             item.position = Position.right;
             item.transform.position = rightPoint.position;
             rightStack.Push(item);
+            CheckForMatch();
+            UpdateAvailability();
         }
         else
         {
@@ -115,31 +160,32 @@ public class Slot : MonoBehaviour
     }
 
 
-    //RemoveItem is called by the draggable object when it gets added to a new slot to notify previous slot to delete it
-    public void RemoveItem(DraggableObject item,Position pos)
+    //RemoveItem is called by the draggable object when it gets added to a new slot to notify previous slot to remove it
+    public void RemoveItem(ItemController item,Position pos)
     {
         if(pos==Position.left)
         {
-            availableSpots++;
             if (leftStack.Count > 0)
                 leftStack.Pop();
+            UpdateAvailability();
         }
         else if (pos==Position.middle)
         {
-            availableSpots++;
             if (middleStack.Count > 0)
             middleStack.Pop();
+            UpdateAvailability();
         }
         else if(pos == Position.right)
         {
-            availableSpots++;
             if (rightStack.Count > 0)
             rightStack.Pop();
+            UpdateAvailability();
         }
         else
         {
             Debug.LogError("Error removing an item, Unhadled situation");
         }
+        CheckIfTopLayerIsEmpty();
     }
     public Spots GetAvailableSpot()
     {
@@ -148,13 +194,11 @@ public class Slot : MonoBehaviour
         {
             if (leftStack.Peek().status == Status.shadowed)
             {
-                availableSpots--;
                 return Spots.left;
             }
         }
         else
         {
-            availableSpots--;
             return Spots.left;
         }
 
@@ -163,13 +207,11 @@ public class Slot : MonoBehaviour
         {
             if (middleStack.Peek().status == Status.shadowed)
             {
-                availableSpots--;
                 return Spots.middle;
             }
         }
         else
         {
-            availableSpots--;
             return Spots.middle;
         }
 
@@ -178,18 +220,71 @@ public class Slot : MonoBehaviour
         {
             if (rightStack.Peek().status == Status.shadowed)
             {
-                availableSpots--;
                 return Spots.right;
             }
         }
         else
         {
-            availableSpots--;
             return Spots.right;
         }
 
         Debug.LogError("Error finding available spot");
         return Spots.unAssigned;
+    }
+
+    private void CheckIfTopLayerIsEmpty()
+    {
+        if((leftStack.Count == 0 || leftStack.Peek().status == Status.shadowed) && (middleStack.Count == 0 || middleStack.Peek().status == Status.shadowed) && (rightStack.Count == 0 || rightStack.Peek().status == Status.shadowed))
+        {
+            ReArrangeStack(leftStack);
+            ReArrangeStack(middleStack);
+            ReArrangeStack(rightStack);
+            UpdateAvailability();
+        }
+
+    }
+
+
+    private void CheckForMatch()
+    {
+        if (leftStack.Count>0&& middleStack.Count > 0&& rightStack.Count > 0)
+        {
+            if(leftStack.Peek().status==Status.visible && middleStack.Peek().status == Status.visible && rightStack.Peek().status == Status.visible)
+            {
+                if (leftStack.Peek().id == middleStack.Peek().id && middleStack.Peek().id == rightStack.Peek().id)
+                {
+                    HandleMatch(leftStack.Peek(), middleStack.Peek(), rightStack.Peek());
+                }
+            }
+        }
+    }
+    private void HandleMatch(ItemController a, ItemController b, ItemController c)
+    {
+        leftStack.Pop();
+        middleStack.Pop();
+        rightStack.Pop();
+        a.itemView.PlayDropAnimation();
+        b.itemView.PlayDropAnimation();
+        c.itemView.PlayDropAnimation();
+        //destroy the objects after a delay
+        StartCoroutine(DestroyWithDelay(a, b, c, 0.3f));
+    }
+
+    private System.Collections.IEnumerator DestroyWithDelay(ItemController a, ItemController b, ItemController c, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Destroy the objects after the delay
+        Destroy(a.gameObject);
+        Destroy(b.gameObject);
+        Destroy(c.gameObject);
+        OnMatch?.Invoke(this);
+
+        ReArrangeStack(leftStack);
+        ReArrangeStack(middleStack);
+        ReArrangeStack(rightStack);
+        UpdateAvailability();
+
     }
 
 
